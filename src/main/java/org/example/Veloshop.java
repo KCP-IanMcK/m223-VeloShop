@@ -1,50 +1,50 @@
 package org.example;
 
 public class Veloshop {
-    int id;
-    String Artikel;
-    String Preis;
-    String Bestand;
+    int itemId;
+    String type;
+    int amount;
+    double price;
 
-    public Veloshop(int id, String artikel, String preis, String bestand) {
-        this.id = id;
-        Artikel = artikel;
-        Preis = preis;
-        Bestand = bestand;
+    public Veloshop(int itemId, String type, int amount, double price) {
+        this.itemId = itemId;
+        this.type = type;
+        this.amount = amount;
+        this.price = price;
     }
     public Veloshop() {
 
     }
 
-    public int getId() {
-        return id;
+    public int getitemId() {
+        return itemId;
     }
 
-    public void setId(int id) {
-        this.id = id;
+    public void setitemId(int itemId) {
+        this.itemId = itemId;
     }
 
-    public String getArtikel() {
-        return Artikel;
+    public String getType() {
+        return type;
     }
 
-    public void setArtikel(String artikel) {
-        Artikel = artikel;
+    public void setType(String type) {
+        this.type = type;
     }
 
-    public String getPreis() {
-        return Preis;
+    public int getAmount() {
+        return amount;
     }
 
-    public void setPreis(String preis) {
-        Preis = preis;
+    public void setAmount(int amount) {
+        this.amount = amount;
     }
 
-    public String getBestand() {
-        return Bestand;
+    public double getPrice() {
+        return price;
     }
 
-    public void setBestand(String bestand) {
-        Bestand = bestand;
+    public void setPrice(double price) {
+        this.price = price;
     }
 }
