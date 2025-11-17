@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class VeloshopDaoImpl implements VeloshopDao {
-    String url = "jdbc:mysql://" + host + ":" + port + "/VeloShop?useSSL=false";
+    String url = "jdbc:mysql://" + host + ":" + port + "/VeloShop?allowPublicKeyRetrieval=true&useSSL=false";
 
     @Override
     public StorageItem selectById(int id) {
