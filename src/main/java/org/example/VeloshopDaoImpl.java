@@ -111,31 +111,42 @@ public class VeloshopDaoImpl implements VeloshopDao {
 
     @Override
     public StorageItem update(StorageItem storageItem) {
-        try {
-            // Verbindung aufbauen
-            Connection conn = DriverManager.getConnection(url, mysqlUser, mysqlPassword);
+        try (Connection conn = DriverManager.getConnection(url, mysqlUser, mysqlPassword)) {
+            // 1. Automatisches Commit deaktivieren
+            conn.setAutoCommit(false);
+
+            String checkQuery = "SELECT amount FROM VeloShop.StorageItems where itemId = ?";
+            try (PreparedStatement checkStmt = conn.prepareStatement(checkQuery)) {
+                checkStmt.setInt(1, storageItem.getItemId());
+
+                ResultSet rs = checkStmt.executeQuery();
+                if (rs.next() && rs.getInt(1) < storageItem.getAmount()) {
+                    conn.rollback();
+                    throw new RuntimeException("Lagerbestand zu klein!");
+                }
+            }
 
             // SQL-Befehl vorbereiten
-            String sql = "UPDATE VeloShop.StorageItems SET type = ?, amount = ?, price = ? WHERE itemId = ?";
+            String sql = "UPDATE VeloShop.StorageItems where itemId = ? SET amount = ?";
 
             try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-                stmt.setString(1, storageItem.getType());
+                stmt.setInt(1, storageItem.getItemId());
                 stmt.setInt(2, storageItem.getAmount());
-                stmt.setDouble(3, storageItem.getPrice());
-                stmt.setInt(4, storageItem.getItemId());
 
-                int rowsUpdated = stmt.executeUpdate();
+                int rowsInserted = stmt.executeUpdate();
 
+                conn.commit();
+
+                // Ressourcen schließen
                 stmt.close();
                 conn.close();
-
-                if (rowsUpdated > 0) {
+                if (rowsInserted > 0) {
                     return selectById(storageItem.getItemId());
                 } else {
                     return null;
                 }
-
             } catch (Exception e) {
+                conn.rollback();
                 e.printStackTrace();
             }
         } catch (Exception e) {
