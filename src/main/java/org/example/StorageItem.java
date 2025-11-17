@@ -1,26 +1,26 @@
 package org.example;
 
-public class Veloshop {
-    int itemId;
-    String type;
-    int amount;
-    double price;
+public class StorageItem {
+    private int itemId;
+    private String type;
+    private int amount;
+    private double price;
 
-    public Veloshop(int itemId, String type, int amount, double price) {
+    public StorageItem(int itemId, String type, int amount, double price) {
         this.itemId = itemId;
         this.type = type;
         this.amount = amount;
         this.price = price;
     }
-    public Veloshop() {
+    public StorageItem() {
 
     }
 
-    public int getitemId() {
+    public int getItemId() {
         return itemId;
     }
 
-    public void setitemId(int itemId) {
+    public void setItemId(int itemId) {
         this.itemId = itemId;
     }
 
