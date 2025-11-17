@@ -6,6 +6,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.stage.Stage;
+
 import java.util.List;
 
 public class VeloshopApp extends Application {
@@ -15,80 +16,93 @@ public class VeloshopApp extends Application {
 
     @Override
     public void start(Stage primaryStage) {
-        primaryStage.setTitle("VeloShop Storage");
+        primaryStage.setTitle("VeloShop - Kundenbestellung");
 
-        // Tabelle
         table = new TableView<>();
+        table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+
         TableColumn<StorageItem, Integer> idCol = new TableColumn<>("ID");
         idCol.setCellValueFactory(c -> new javafx.beans.property.SimpleIntegerProperty(c.getValue().getItemId()).asObject());
 
-        TableColumn<StorageItem, String> typeCol = new TableColumn<>("Type");
+        TableColumn<StorageItem, String> typeCol = new TableColumn<>("Artikel");
         typeCol.setCellValueFactory(c -> new javafx.beans.property.SimpleStringProperty(c.getValue().getType()));
 
-        TableColumn<StorageItem, Integer> amountCol = new TableColumn<>("Amount");
+        TableColumn<StorageItem, Integer> amountCol = new TableColumn<>("Verfügbar");
         amountCol.setCellValueFactory(c -> new javafx.beans.property.SimpleIntegerProperty(c.getValue().getAmount()).asObject());
 
-        TableColumn<StorageItem, Double> priceCol = new TableColumn<>("Price");
+        TableColumn<StorageItem, Double> priceCol = new TableColumn<>("Preis");
         priceCol.setCellValueFactory(c -> new javafx.beans.property.SimpleDoubleProperty(c.getValue().getPrice()).asObject());
 
         table.getColumns().addAll(idCol, typeCol, amountCol, priceCol);
         refreshTable();
 
-        // Eingabefelder
-        TextField idField = new TextField(); idField.setPromptText("ID");
-        TextField typeField = new TextField(); typeField.setPromptText("Type");
-        TextField amountField = new TextField(); amountField.setPromptText("Amount");
-        TextField priceField = new TextField(); priceField.setPromptText("Price");
+        // -------------------------------
+        // Eingabefelder für Bestellung
+        // -------------------------------
+        TextField itemIdField = new TextField();
+        itemIdField.setPromptText("Artikel-ID");
+        itemIdField.setEditable(false);
 
-        Button addBtn = new Button("Save");
-        addBtn.setOnAction(e -> {
+        TextField typeField = new TextField();
+        typeField.setPromptText("Artikelname");
+        typeField.setEditable(false);
+
+        TextField orderAmountField = new TextField();
+        orderAmountField.setPromptText("Bestellmenge");
+
+        // Füllt Felder automatisch, wenn Kunde etwas in der Tabelle auswählt
+        table.getSelectionModel().selectedItemProperty().addListener((obs, oldSel, newSel) -> {
+            if (newSel != null) {
+                itemIdField.setText(String.valueOf(newSel.getItemId()));
+                typeField.setText(newSel.getType());
+            }
+        });
+
+        // -------------------------------
+        // Bestellen Button
+        // -------------------------------
+        Button orderBtn = new Button("Bestellen");
+        orderBtn.setOnAction(e -> {
             try {
-                StorageItem item = new StorageItem(
-                        Integer.parseInt(idField.getText()),
-                        typeField.getText(),
-                        Integer.parseInt(amountField.getText()),
-                        Double.parseDouble(priceField.getText())
-                );
-                dao.save(item);
+                int id = Integer.parseInt(itemIdField.getText());
+                int amount = Integer.parseInt(orderAmountField.getText());
+
+                if (amount <= 0) {
+                    showError(new RuntimeException("Menge muss > 0 sein"));
+                    return;
+                }
+
+                StorageItem existing = dao.selectById(id);
+                if (existing == null) {
+                    showError(new RuntimeException("Artikel existiert nicht."));
+                    return;
+                }
+
+                // Neue Menge für DB
+                int newAmount = existing.getAmount() - amount;
+
+                StorageItem updated = new StorageItem(id, existing.getType(), newAmount, existing.getPrice());
+                dao.update(updated); // verwendet deine Transaktionslogik
+
                 refreshTable();
+                orderAmountField.clear();
+
             } catch (Exception ex) {
                 ex.printStackTrace();
                 showError(ex);
             }
         });
 
-        Button updateBtn = new Button("Update Amount");
-        updateBtn.setOnAction(e -> {
-            try {
-                StorageItem item = new StorageItem(
-                        Integer.parseInt(idField.getText()),
-                        typeField.getText(),
-                        Integer.parseInt(amountField.getText()),
-                        Double.parseDouble(priceField.getText())
-                );
-                dao.update(item);
-                refreshTable();
-            } catch (Exception ex) {
-                ex.printStackTrace();
-                showError(ex);
-            }
-        });
+        // -------------------------------
+        // Refresh Button
+        // -------------------------------
+        Button refreshBtn = new Button("Refresh");
+        refreshBtn.setOnAction(e -> refreshTable());
 
-        Button deleteBtn = new Button("Delete");
-        deleteBtn.setOnAction(e -> {
-            try {
-                dao.delete(Integer.parseInt(idField.getText()));
-                refreshTable();
-            } catch (Exception ex) {
-                ex.printStackTrace();
-                showError(ex);
-            }
-        });
+        HBox orderBox = new HBox(10, itemIdField, typeField, orderAmountField, orderBtn, refreshBtn);
+        orderBox.setPadding(new Insets(10));
 
-        HBox inputBox = new HBox(10, idField, typeField, amountField, priceField, addBtn, updateBtn, deleteBtn);
-        inputBox.setPadding(new Insets(10));
-
-        VBox layout = new VBox(10, table, inputBox);
+        VBox layout = new VBox(10, table, orderBox);
         layout.setPadding(new Insets(10));
 
         primaryStage.setScene(new Scene(layout, 900, 500));
@@ -98,22 +112,17 @@ public class VeloshopApp extends Application {
     private void refreshTable() {
         try {
             List<StorageItem> items = dao.selectAll();
-            if (items != null) {
-                table.getItems().setAll(items);
-            } else {
-                table.getItems().clear();
-            }
+            table.getItems().setAll(items);
         } catch (Exception e) {
-            e.printStackTrace();
             showError(e);
         }
     }
 
     private void showError(Exception ex) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
-        alert.setTitle("Error");
-        alert.setHeaderText("An error occurred");
-        alert.setContentText(ex.getMessage() != null ? ex.getMessage() : ex.toString());
+        alert.setTitle("Fehler");
+        alert.setHeaderText("Es ist ein Problem aufgetreten");
+        alert.setContentText(ex.getMessage());
         alert.showAndWait();
     }
 

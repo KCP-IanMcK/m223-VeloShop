@@ -112,9 +112,10 @@ public class VeloshopDaoImpl implements VeloshopDao {
     @Override
     public StorageItem update(StorageItem storageItem) {
         try (Connection conn = DriverManager.getConnection(url, mysqlUser, mysqlPassword)) {
+
+            conn.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);
             conn.setAutoCommit(false);
 
-            // Prüfen, ob die itemId existiert
             String existQuery = "SELECT COUNT(*) FROM VeloShop.StorageItems WHERE itemId = ?";
             try (PreparedStatement existStmt = conn.prepareStatement(existQuery)) {
                 existStmt.setInt(1, storageItem.getItemId());
@@ -125,39 +126,44 @@ public class VeloshopDaoImpl implements VeloshopDao {
                 }
             }
 
-            // Prüfen, ob genug Lagerbestand vorhanden ist
-            String checkQuery = "SELECT amount FROM VeloShop.StorageItems WHERE itemId = ?";
+            int currentAmount = 0;
+
+            String checkQuery = "SELECT amount FROM VeloShop.StorageItems WHERE itemId = ? FOR UPDATE";
             try (PreparedStatement checkStmt = conn.prepareStatement(checkQuery)) {
                 checkStmt.setInt(1, storageItem.getItemId());
                 try (ResultSet rs = checkStmt.executeQuery()) {
-                    if (rs.next() && rs.getInt(1) < storageItem.getAmount()) {
-                        conn.rollback();
-                        throw new RuntimeException("Lagerbestand zu klein!");
+                    if (rs.next()) {
+                        currentAmount = rs.getInt("amount");
                     }
                 }
             }
 
-            // Update ausführen
+            if (currentAmount < storageItem.getAmount()) {
+                conn.rollback();
+                throw new RuntimeException("Lagerbestand zu klein!");
+            }
+
+            int newAmount = storageItem.getAmount();
+
             String sql = "UPDATE VeloShop.StorageItems SET amount = ? WHERE itemId = ?";
             try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-                stmt.setInt(1, storageItem.getAmount());
+                stmt.setInt(1, newAmount);
                 stmt.setInt(2, storageItem.getItemId());
-
                 int rowsUpdated = stmt.executeUpdate();
+
                 conn.commit();
 
                 if (rowsUpdated > 0) {
                     return selectById(storageItem.getItemId());
-                } else {
-                    return null;
                 }
+                return null;
             }
 
         } catch (Exception e) {
-            // Exception nach oben werfen, damit UI sie anzeigen kann
             throw new RuntimeException(e);
         }
     }
+
 
     @Override
     public void delete(int id) {

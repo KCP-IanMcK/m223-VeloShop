@@ -10,7 +10,7 @@ import java.util.List;
 class VeloshopDaoImplTest {
 
     VeloshopDao veloshopDao = new VeloshopDaoImpl();
-    StorageItem storageItemSetUp = new StorageItem(1, "Rad", 10, 120.00);
+    StorageItem storageItemSetUp = new StorageItem(100000, "Rad", 10, 120.00);
 
     @BeforeEach
     void setUp() {
@@ -28,7 +28,7 @@ class VeloshopDaoImplTest {
 
     @Test
     void selectById() {
-        StorageItem storageItem = veloshopDao.selectById(1);
+        StorageItem storageItem = veloshopDao.selectById(storageItemSetUp.getItemId());
 
         Assertions.assertEquals(storageItem.getType(), storageItemSetUp.getType());
         Assertions.assertEquals(storageItem.getPrice(), storageItemSetUp.getPrice());
@@ -43,7 +43,7 @@ class VeloshopDaoImplTest {
 
     @Test
     void save() {
-        StorageItem storageItemToSave = new StorageItem(2, "Rahmen", 10, 120.00);
+        StorageItem storageItemToSave = new StorageItem(100002, "Rahmen", 10, 120.00);
         StorageItem storageItem = veloshopDao.save(storageItemToSave);
         Assertions.assertEquals(storageItem.getType(), storageItemToSave.getType());
         Assertions.assertEquals(storageItem.getAmount(), storageItemToSave.getAmount());
@@ -52,7 +52,7 @@ class VeloshopDaoImplTest {
 
     @Test
     void update() {
-        StorageItem storageItemToUpdateTo = new StorageItem(1, "Rad", 8, 120.00);
+        StorageItem storageItemToUpdateTo = new StorageItem(100000, "Rad", 8, 120.00);
         StorageItem storageItem = veloshopDao.update(storageItemToUpdateTo);
         Assertions.assertEquals(storageItem.getType(), storageItemToUpdateTo.getType());
         Assertions.assertEquals(storageItem.getAmount(), storageItemToUpdateTo.getAmount());
