@@ -114,7 +114,18 @@ public class VeloshopDaoImpl implements VeloshopDao {
         try (Connection conn = DriverManager.getConnection(url, mysqlUser, mysqlPassword)) {
             conn.setAutoCommit(false);
 
-            // Prüfen, ob genug Lagerbestand vorhanden ist
+            // 1. Prüfen, ob die itemId existiert
+            String existQuery = "SELECT COUNT(*) FROM VeloShop.StorageItems WHERE itemId = ?";
+            try (PreparedStatement existStmt = conn.prepareStatement(existQuery)) {
+                existStmt.setInt(1, storageItem.getItemId());
+                try (ResultSet rs = existStmt.executeQuery()) {
+                    if (rs.next() && rs.getInt(1) == 0) {
+                        throw new RuntimeException("The product with this id does not exist");
+                    }
+                }
+            }
+
+            // 2. Prüfen, ob genug Lagerbestand vorhanden ist
             String checkQuery = "SELECT amount FROM VeloShop.StorageItems WHERE itemId = ?";
             try (PreparedStatement checkStmt = conn.prepareStatement(checkQuery)) {
                 checkStmt.setInt(1, storageItem.getItemId());
@@ -126,11 +137,11 @@ public class VeloshopDaoImpl implements VeloshopDao {
                 }
             }
 
-            // Update ausführen
+            // 3. Update ausführen
             String sql = "UPDATE VeloShop.StorageItems SET amount = ? WHERE itemId = ?";
             try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-                stmt.setInt(1, storageItem.getAmount());   // <-- richtig
-                stmt.setInt(2, storageItem.getItemId());  // <-- richtig
+                stmt.setInt(1, storageItem.getAmount());
+                stmt.setInt(2, storageItem.getItemId());
 
                 int rowsUpdated = stmt.executeUpdate();
                 conn.commit();
