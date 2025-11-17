@@ -53,6 +53,7 @@ public class VeloshopApp extends Application {
                 refreshTable();
             } catch (Exception ex) {
                 ex.printStackTrace();
+                showError(ex);
             }
         });
 
@@ -69,6 +70,7 @@ public class VeloshopApp extends Application {
                 refreshTable();
             } catch (Exception ex) {
                 ex.printStackTrace();
+                showError(ex);
             }
         });
 
@@ -79,6 +81,7 @@ public class VeloshopApp extends Application {
                 refreshTable();
             } catch (Exception ex) {
                 ex.printStackTrace();
+                showError(ex);
             }
         });
 
@@ -93,8 +96,25 @@ public class VeloshopApp extends Application {
     }
 
     private void refreshTable() {
-        List<StorageItem> items = dao.selectAll();
-        table.getItems().setAll(items);
+        try {
+            List<StorageItem> items = dao.selectAll();
+            if (items != null) {
+                table.getItems().setAll(items);
+            } else {
+                table.getItems().clear();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            showError(e);
+        }
+    }
+
+    private void showError(Exception ex) {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle("Error");
+        alert.setHeaderText("An error occurred");
+        alert.setContentText(ex.getMessage() != null ? ex.getMessage() : ex.toString());
+        alert.showAndWait();
     }
 
     public static void main(String[] args) {

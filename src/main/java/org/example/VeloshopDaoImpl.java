@@ -114,7 +114,7 @@ public class VeloshopDaoImpl implements VeloshopDao {
         try (Connection conn = DriverManager.getConnection(url, mysqlUser, mysqlPassword)) {
             conn.setAutoCommit(false);
 
-            // 1. Prüfen, ob die itemId existiert
+            // Prüfen, ob die itemId existiert
             String existQuery = "SELECT COUNT(*) FROM VeloShop.StorageItems WHERE itemId = ?";
             try (PreparedStatement existStmt = conn.prepareStatement(existQuery)) {
                 existStmt.setInt(1, storageItem.getItemId());
@@ -125,7 +125,7 @@ public class VeloshopDaoImpl implements VeloshopDao {
                 }
             }
 
-            // 2. Prüfen, ob genug Lagerbestand vorhanden ist
+            // Prüfen, ob genug Lagerbestand vorhanden ist
             String checkQuery = "SELECT amount FROM VeloShop.StorageItems WHERE itemId = ?";
             try (PreparedStatement checkStmt = conn.prepareStatement(checkQuery)) {
                 checkStmt.setInt(1, storageItem.getItemId());
@@ -137,7 +137,7 @@ public class VeloshopDaoImpl implements VeloshopDao {
                 }
             }
 
-            // 3. Update ausführen
+            // Update ausführen
             String sql = "UPDATE VeloShop.StorageItems SET amount = ? WHERE itemId = ?";
             try (PreparedStatement stmt = conn.prepareStatement(sql)) {
                 stmt.setInt(1, storageItem.getAmount());
@@ -151,15 +151,12 @@ public class VeloshopDaoImpl implements VeloshopDao {
                 } else {
                     return null;
                 }
-            } catch (Exception e) {
-                conn.rollback();
-                e.printStackTrace();
             }
 
         } catch (Exception e) {
-            e.printStackTrace();
+            // Exception nach oben werfen, damit UI sie anzeigen kann
+            throw new RuntimeException(e);
         }
-        return null;
     }
 
     @Override
