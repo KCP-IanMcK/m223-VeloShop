@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class VeloshopDaoImpl implements VeloshopDao {
-    String url = host + ":" + port;
+    String url = "jdbc:mysql://" + host + ":" + port + "/StorageItems";
 
     @Override
     public StorageItem selectById(int id) {
@@ -127,7 +127,7 @@ public class VeloshopDaoImpl implements VeloshopDao {
             }
 
             // SQL-Befehl vorbereiten
-            String sql = "UPDATE VeloShop.StorageItems where itemId = ? SET amount = ?";
+            String sql = "UPDATE VeloShop.StorageItems SET amount = ? where itemId = ?;";
 
             try (PreparedStatement stmt = conn.prepareStatement(sql)) {
                 stmt.setInt(1, storageItem.getItemId());
