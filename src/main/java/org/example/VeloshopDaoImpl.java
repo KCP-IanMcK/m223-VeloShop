@@ -112,35 +112,30 @@ public class VeloshopDaoImpl implements VeloshopDao {
     @Override
     public StorageItem update(StorageItem storageItem) {
         try (Connection conn = DriverManager.getConnection(url, mysqlUser, mysqlPassword)) {
-            // 1. Automatisches Commit deaktivieren
             conn.setAutoCommit(false);
 
-            String checkQuery = "SELECT amount FROM VeloShop.StorageItems where itemId = ?";
+            // Prüfen, ob genug Lagerbestand vorhanden ist
+            String checkQuery = "SELECT amount FROM VeloShop.StorageItems WHERE itemId = ?";
             try (PreparedStatement checkStmt = conn.prepareStatement(checkQuery)) {
                 checkStmt.setInt(1, storageItem.getItemId());
-
-                ResultSet rs = checkStmt.executeQuery();
-                if (rs.next() && rs.getInt(1) < storageItem.getAmount()) {
-                    conn.rollback();
-                    throw new RuntimeException("Lagerbestand zu klein!");
+                try (ResultSet rs = checkStmt.executeQuery()) {
+                    if (rs.next() && rs.getInt(1) < storageItem.getAmount()) {
+                        conn.rollback();
+                        throw new RuntimeException("Lagerbestand zu klein!");
+                    }
                 }
             }
 
-            // SQL-Befehl vorbereiten
-            String sql = "UPDATE VeloShop.StorageItems SET amount = ? where itemId = ?;";
-
+            // Update ausführen
+            String sql = "UPDATE VeloShop.StorageItems SET amount = ? WHERE itemId = ?";
             try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-                stmt.setInt(1, storageItem.getItemId());
-                stmt.setInt(2, storageItem.getAmount());
+                stmt.setInt(1, storageItem.getAmount());   // <-- richtig
+                stmt.setInt(2, storageItem.getItemId());  // <-- richtig
 
-                int rowsInserted = stmt.executeUpdate();
-
+                int rowsUpdated = stmt.executeUpdate();
                 conn.commit();
 
-                // Ressourcen schließen
-                stmt.close();
-                conn.close();
-                if (rowsInserted > 0) {
+                if (rowsUpdated > 0) {
                     return selectById(storageItem.getItemId());
                 } else {
                     return null;
@@ -149,6 +144,7 @@ public class VeloshopDaoImpl implements VeloshopDao {
                 conn.rollback();
                 e.printStackTrace();
             }
+
         } catch (Exception e) {
             e.printStackTrace();
         }
